@@ -84,7 +84,9 @@ const frontendBuildPath = path.join(__dirname, '../frontend/build');
 app.use(express.static(frontendBuildPath));
 
 // Catch-all route to serve the frontend for any other requests
+// Using regex literal for total compatibility with Express 5+
 app.get(/.*/, (req, res) => {
+  console.log(`🌐 Catch-all: serving index.html for ${req.url}`);
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 
@@ -95,7 +97,7 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Dictionary Server running on http://localhost:${PORT}`);
+  console.log(`🚀 Dictionary Server starting up...`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
   console.log(`📚 API available at http://localhost:${PORT}/api`);
 });

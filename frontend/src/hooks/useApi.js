@@ -34,12 +34,12 @@ export const useWordDefinition = (word) => {
 
       try {
         // Try to fetch from API first
-        const response = await axios.get(`http://localhost:5000/api/define/${word}`);
+        const response = await axios.get(`/api/define/${word}`);
         const result = response.data;
-        
+
         // Save to IndexedDB for offline use
         await dbUtils.saveDefinition(word, result);
-        
+
         setData(result);
       } catch (err) {
         // If API fails, try to get from cache
@@ -78,9 +78,9 @@ export const useSynonyms = (word) => {
       setError(null);
 
       try {
-        const response = await axios.get(`http://localhost:5000/api/synonyms/${word}`);
+        const response = await axios.get(`/api/synonyms/${word}`);
         const result = response.data.slice(0, 5).map(item => item.word);
-        
+
         await dbUtils.saveSynonyms(word, result);
         setData(result);
       } catch (err) {
@@ -118,9 +118,9 @@ export const useAntonyms = (word) => {
       setError(null);
 
       try {
-        const response = await axios.get(`http://localhost:5000/api/antonyms/${word}`);
+        const response = await axios.get(`/api/antonyms/${word}`);
         const result = response.data.slice(0, 5).map(item => item.word);
-        
+
         await dbUtils.saveAntonyms(word, result);
         setData(result);
       } catch (err) {

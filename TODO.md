@@ -8,3 +8,12 @@
 - [x] Update `frontend/src/components/History.js` to add icons to buttons and list items.
 - [ ] Run the frontend app to verify visual changes.
 - [ ] Test responsiveness on different screen sizes.
+
+## Deployment Readiness
+- [x] Configure backend to serve static frontend files.
+- [x] Use relative API paths in frontend for portability.
+- [x] Create root `package.json` for unified management.
+- [x] Add `Dockerfile` and `docker-compose.yml`.
+- [x] Update `README.md` with deployment guides.
+- [ ] Verify production build locally.
+

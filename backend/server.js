@@ -84,7 +84,7 @@ const frontendBuildPath = path.join(__dirname, '../frontend/build');
 app.use(express.static(frontendBuildPath));
 
 // Catch-all route to serve the frontend for any other requests
-app.get('/:any*', (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 

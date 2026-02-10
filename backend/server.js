@@ -19,7 +19,7 @@ app.get('/health', (req, res) => {
 app.get('/api/define/:word', async (req, res) => {
   try {
     const word = req.params.word;
-    
+
     if (!word || word.trim() === '') {
       return res.status(400).json({ error: 'Word parameter is required' });
     }
@@ -27,7 +27,7 @@ app.get('/api/define/:word', async (req, res) => {
     const response = await axios.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`, {
       timeout: 5000
     });
-    
+
     res.json(response.data);
   } catch (error) {
     if (error.response?.status === 404) {
@@ -43,7 +43,7 @@ app.get('/api/define/:word', async (req, res) => {
 app.get('/api/synonyms/:word', async (req, res) => {
   try {
     const word = req.params.word;
-    
+
     if (!word || word.trim() === '') {
       return res.status(400).json({ error: 'Word parameter is required' });
     }
@@ -51,7 +51,7 @@ app.get('/api/synonyms/:word', async (req, res) => {
     const response = await axios.get(`https://api.datamuse.com/words?rel_syn=${word}`, {
       timeout: 5000
     });
-    
+
     res.json(response.data || []);
   } catch (error) {
     console.error('Error fetching synonyms:', error.message);
@@ -63,7 +63,7 @@ app.get('/api/synonyms/:word', async (req, res) => {
 app.get('/api/antonyms/:word', async (req, res) => {
   try {
     const word = req.params.word;
-    
+
     if (!word || word.trim() === '') {
       return res.status(400).json({ error: 'Word parameter is required' });
     }
@@ -71,7 +71,7 @@ app.get('/api/antonyms/:word', async (req, res) => {
     const response = await axios.get(`https://api.datamuse.com/words?rel_ant=${word}`, {
       timeout: 5000
     });
-    
+
     res.json(response.data || []);
   } catch (error) {
     console.error('Error fetching antonyms:', error.message);
@@ -84,7 +84,7 @@ const frontendBuildPath = path.join(__dirname, '../frontend/build');
 app.use(express.static(frontendBuildPath));
 
 // Catch-all route to serve the frontend for any other requests
-app.get('*', (req, res) => {
+app.get('/*', (req, res) => {
   res.sendFile(path.join(frontendBuildPath, 'index.html'));
 });
 

@@ -18,7 +18,7 @@ const WordResult = ({ wordData }) => {
   const fetchSynonyms = async (word) => {
     setLoadingSynonyms(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/synonyms/${word}`);
+      const response = await fetch(`/api/synonyms/${word}`);
       if (response.ok) {
         const data = await response.json();
         const synonymList = data.slice(0, 5).map(item => item.word);
@@ -38,7 +38,7 @@ const WordResult = ({ wordData }) => {
   const fetchAntonyms = async (word) => {
     setLoadingAntonyms(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/antonyms/${word}`);
+      const response = await fetch(`/api/antonyms/${word}`);
       if (response.ok) {
         const data = await response.json();
         const antonymList = data.slice(0, 5).map(item => item.word);

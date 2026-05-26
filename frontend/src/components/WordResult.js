@@ -6,132 +6,194 @@ const WordResult = ({ wordData }) => {
   const [antonyms, setAntonyms] = useState([]);
   const [loadingSynonyms, setLoadingSynonyms] = useState(false);
   const [loadingAntonyms, setLoadingAntonyms] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
+
+  const word = wordData && wordData[0] ? wordData[0] : null;
 
   useEffect(() => {
-    if (wordData && wordData[0]) {
-      const word = wordData[0].word;
-      fetchSynonyms(word);
-      fetchAntonyms(word);
+    if (word) {
+      fetchSynonyms(word.word);
+      fetchAntonyms(word.word);
+      checkFavoriteStatus(word.word);
     }
-  }, [wordData]);
+  }, [word]);
 
-  const fetchSynonyms = async (word) => {
+  const checkFavoriteStatus = (w) => {
+    const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+    setIsFavorited(favorites.includes(w.toLowerCase()));
+  };
+
+  const fetchSynonyms = async (w) => {
     setLoadingSynonyms(true);
     try {
-      const response = await fetch(`/api/synonyms/${word}`);
+      const response = await fetch(`/api/synonyms/${w}`);
       if (response.ok) {
         const data = await response.json();
-        const synonymList = data.slice(0, 5).map(item => item.word);
+        const synonymList = data.slice(0, 8).map(item => item.word);
         setSynonyms(synonymList);
-        await dbUtils.saveSynonyms(word, synonymList);
+        await dbUtils.saveSynonyms(w, synonymList);
       }
     } catch (error) {
       // Try to get from cache
-      const cachedData = await dbUtils.getSynonyms(word);
+      const cachedData = await dbUtils.getSynonyms(w);
       if (cachedData) {
         setSynonyms(cachedData);
       }
+    } finally {
+      setLoadingSynonyms(false);
     }
-    setLoadingSynonyms(false);
   };
 
-  const fetchAntonyms = async (word) => {
+  const fetchAntonyms = async (w) => {
     setLoadingAntonyms(true);
     try {
-      const response = await fetch(`/api/antonyms/${word}`);
+      const response = await fetch(`/api/antonyms/${w}`);
       if (response.ok) {
         const data = await response.json();
-        const antonymList = data.slice(0, 5).map(item => item.word);
+        const antonymList = data.slice(0, 8).map(item => item.word);
         setAntonyms(antonymList);
-        await dbUtils.saveAntonyms(word, antonymList);
+        await dbUtils.saveAntonyms(w, antonymList);
       }
     } catch (error) {
       // Try to get from cache
-      const cachedData = await dbUtils.getAntonyms(word);
+      const cachedData = await dbUtils.getAntonyms(w);
       if (cachedData) {
         setAntonyms(cachedData);
       }
+    } finally {
+      setLoadingAntonyms(false);
     }
-    setLoadingAntonyms(false);
   };
 
-  if (!wordData || !wordData[0]) return null;
+  if (!word) return null;
 
-  const word = wordData[0];
-  const phonetics = word.phonetics.find(p => p.audio) || word.phonetics[0];
-  const meanings = word.meanings[0];
-  const definition = meanings.definitions[0];
+  // Find phonetic with audio or text
+  const phonetics = word.phonetics || [];
+  const phoneticWithAudio = phonetics.find(p => p.audio && p.audio.trim() !== '');
+  const phoneticText = phonetics.find(p => p.text)?.text || (word.phonetic ? word.phonetic : '');
 
-  const addToFavorites = () => {
+  const toggleFavorite = () => {
     const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-    if (!favorites.includes(word.word)) {
-      favorites.push(word.word);
-      localStorage.setItem('favorites', JSON.stringify(favorites));
-      alert('✓ Added to favorites!');
+    const lowerWord = word.word.toLowerCase();
+    
+    if (isFavorited) {
+      const updated = favorites.filter(fav => fav !== lowerWord);
+      localStorage.setItem('favorites', JSON.stringify(updated));
+      setIsFavorited(false);
     } else {
-      alert('Already in favorites!');
+      favorites.push(lowerWord);
+      localStorage.setItem('favorites', JSON.stringify(favorites));
+      setIsFavorited(true);
     }
+  };
+
+  const handleCopyDefinition = (definitionText) => {
+    navigator.clipboard.writeText(`"${word.word}" definition: ${definitionText}`);
+    alert('✓ Copied definition to clipboard!');
   };
 
   return (
-    <div className="card mt-3 border-0 shadow-sm">
-      <div className="card-body">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            <h2 className="card-title mb-1">{word.word}</h2>
-            {phonetics && phonetics.text && <p className="text-muted mb-0"><em>{phonetics.text}</em></p>}
-          </div>
-          <button className="btn btn-outline-primary" onClick={addToFavorites}>❤️ Add to Favorites</button>
+    <div className="card border-0 shadow-sm glass-card p-4 animate-fade-in mb-4">
+      <div className="d-flex justify-content-between align-items-start mb-3">
+        <div>
+          <h1 className="text-gradient mb-1" style={{ fontSize: '2.5rem' }}>{word.word}</h1>
+          {phoneticText && (
+            <span className="text-secondary fs-5 font-monospace">{phoneticText}</span>
+          )}
         </div>
-        
-        {phonetics && phonetics.audio && (
-          <button className="btn btn-secondary btn-sm mb-3" onClick={() => {
-            try {
-              new Audio(phonetics.audio).play();
-            } catch (err) {
-              console.error('Error playing audio:', err);
-            }
-          }}>
-            <svg width="16" height="16" fill="currentColor" className="bi bi-volume-up me-2" viewBox="0 0 16 16">
-              <path d="M11.536 14.01A8.473 8.473 0 0 0 14.026 8a8.473 8.473 0 0 0-2.49-6.01l-.708.707A7.476 7.476 0 0 1 13.025 8c0 2.071-.84 3.946-2.197 5.303l.708.707z"/>
-              <path d="M10.121 12.596A6.48 6.48 0 0 0 12.025 8a6.48 6.48 0 0 0-1.904-4.596l-.707.707A5.483 5.483 0 0 1 11.025 8a5.483 5.483 0 0 1-1.61 3.89l.707.707z"/>
-              <path d="M10.025 8a4.486 4.486 0 0 1-1.318-3.182L8 5.536l-.707-.707A4.486 4.486 0 0 1 6 8c0 .746.295 1.436.78 1.96l.707-.707A3.498 3.498 0 0 0 7.025 8c0-.966.392-1.841 1.002-2.54l.707.707zm-7.96-4.203-.707-.707 12.5 12.5.707.707L2.064 3.797z"/>
-            </svg>
-            Play Pronunciation
-          </button>
-        )}
-        
-        <hr />
-        
-        <div className="mb-3">
-          <h5><strong>Definition</strong></h5>
-          <p className="lead">{definition.definition}</p>
-          {definition.example && <p><em>"<strong>{definition.example}</strong>"</em></p>}
-        </div>
+        <button 
+          className={`btn ${isFavorited ? 'btn-danger' : 'btn-glass-secondary'} d-flex align-items-center gap-2`}
+          onClick={toggleFavorite}
+        >
+          {isFavorited ? '❤️ Favorited' : '🤍 Save Word'}
+        </button>
+      </div>
 
-        {loadingSynonyms && <p className="text-muted">Loading synonyms...</p>}
-        {synonyms.length > 0 && (
-          <div className="mb-3">
-            <h5><strong>Synonyms</strong></h5>
+      {phoneticWithAudio && (
+        <div className="mb-4">
+          <button 
+            className="btn btn-premium btn-sm py-2 px-3 d-flex align-items-center gap-2" 
+            onClick={() => {
+              try {
+                new Audio(phoneticWithAudio.audio).play();
+              } catch (err) {
+                console.error('Error playing audio:', err);
+              }
+            }}
+          >
+            🔊 Play Audio Pronunciation
+          </button>
+        </div>
+      )}
+
+      <hr className="my-4" style={{ opacity: 0.15 }} />
+
+      {/* Loop meanings */}
+      <div className="mb-4">
+        {word.meanings.map((meaning, index) => (
+          <div key={index} className="mb-4">
+            <div className="d-flex align-items-center mb-2">
+              <span className="badge bg-primary text-uppercase px-3 py-1 me-2" style={{ borderRadius: '20px', letterSpacing: '0.5px' }}>
+                {meaning.partOfSpeech}
+              </span>
+            </div>
+            
+            <ol className="list-group list-group-numbered border-0 bg-transparent mb-3">
+              {meaning.definitions.slice(0, 3).map((def, idx) => (
+                <li key={idx} className="list-group-item bg-transparent border-0 ps-0 text-primary py-2 d-flex align-items-start justify-content-between">
+                  <div className="flex-grow-1">
+                    <span className="fs-5">{def.definition}</span>
+                    {def.example && (
+                      <div className="text-secondary italic mt-1 ps-3 border-start border-2 border-secondary" style={{ fontSize: '0.95rem' }}>
+                        "{def.example}"
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    className="btn btn-sm btn-link p-1 text-decoration-none" 
+                    onClick={() => handleCopyDefinition(def.definition)}
+                    title="Copy definition"
+                  >
+                    📋
+                  </button>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ))}
+      </div>
+
+      {/* Synonyms & Antonyms */}
+      <div className="row g-3">
+        <div className="col-12 col-md-6">
+          <div className="p-3 rounded h-100" style={{ background: 'rgba(99, 102, 241, 0.03)', border: '1px solid var(--card-border)' }}>
+            <h5 className="mb-3">Synonyms</h5>
+            {loadingSynonyms && <p className="text-muted">Loading synonyms...</p>}
+            {!loadingSynonyms && synonyms.length === 0 && <p className="text-secondary italic fs-6">No synonyms found.</p>}
             <div className="d-flex flex-wrap gap-2">
               {synonyms.map((syn, idx) => (
-                <span key={idx} className="badge bg-info text-dark">{syn}</span>
+                <span key={idx} className="badge bg-info text-dark py-2 px-3 fs-6" style={{ borderRadius: '20px' }}>
+                  {syn}
+                </span>
               ))}
             </div>
           </div>
-        )}
+        </div>
 
-        {loadingAntonyms && <p className="text-muted">Loading antonyms...</p>}
-        {antonyms.length > 0 && (
-          <div className="mb-3">
-            <h5><strong>Antonyms</strong></h5>
+        <div className="col-12 col-md-6">
+          <div className="p-3 rounded h-100" style={{ background: 'rgba(99, 102, 241, 0.03)', border: '1px solid var(--card-border)' }}>
+            <h5 className="mb-3">Antonyms</h5>
+            {loadingAntonyms && <p className="text-muted">Loading antonyms...</p>}
+            {!loadingAntonyms && antonyms.length === 0 && <p className="text-secondary italic fs-6">No antonyms found.</p>}
             <div className="d-flex flex-wrap gap-2">
               {antonyms.map((ant, idx) => (
-                <span key={idx} className="badge bg-warning text-dark">{ant}</span>
+                <span key={idx} className="badge bg-warning text-dark py-2 px-3 fs-6" style={{ borderRadius: '20px' }}>
+                  {ant}
+                </span>
               ))}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

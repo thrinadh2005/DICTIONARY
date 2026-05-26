@@ -1,6 +1,6 @@
 /* eslint-disable no-restricted-globals */
 
-const CACHE_NAME = 'dictionary-cache-v1';
+const CACHE_NAME = 'lexicon-hub-cache-v2';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
@@ -99,4 +99,31 @@ self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+});
+
+// Handle notification clicks (focus PWA window and redirect to specific word)
+self.addEventListener('notificationclick', event => {
+  const notification = event.notification;
+  notification.close();
+
+  const urlToOpen = (notification.data && notification.data.url) 
+    ? new URL(notification.data.url, self.location.origin).toString() 
+    : self.location.origin;
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(windowClients => {
+        // If app window is already open, navigate and focus it
+        for (let i = 0; i < windowClients.length; i++) {
+          const client = windowClients[i];
+          if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+            return client.navigate(urlToOpen).then(c => c.focus());
+          }
+        }
+        // Otherwise, open a new PWA window
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(urlToOpen);
+        }
+      })
+  );
 });
